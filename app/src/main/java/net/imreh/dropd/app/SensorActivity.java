@@ -56,7 +56,7 @@ public class SensorActivity extends Activity implements SensorEventListener {
         float total = sqrt(gx * gx + gy * gy + gz * gz);
         // Do something with this sensor value.
         // Log.i(TAG, "gravity = " + gx + ";" + gy + ";" + gz);
-        if (total < 2.0) {
+        if (total < 1.0) {
             Log.i(TAG, "acceleration< = " + total + "->" + gx + ";" + gy + ";" + gz);
             if (!isFlying && (screamId < 0) && (event.timestamp - lastStop > 1e9)) {
                 screamId = sp.play(soundIds[0], 100, 100, 1, -1, (float) 1.0);
