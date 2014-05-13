@@ -6,6 +6,8 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -14,7 +16,18 @@ import static android.util.FloatMath.sqrt;
 public class SensorActivity extends Activity implements SensorEventListener {
     private SensorManager mSensorManager;
     private Sensor mGravity;
+    private SoundPool sp;
+    private int[] soundIds;
     private static final String TAG = "DropdSensor";
+    private boolean isFlying;
+    private int screamId, ouchId;
+    private long lastStop;
+
+    public SensorActivity() {
+        sp = new SoundPool(2, AudioManager.STREAM_MUSIC, 0);
+        lastStop = 0;
+        soundIds = new int[2];
+    }
 
     @Override
     public final void onCreate(Bundle savedInstanceState) {
@@ -23,6 +36,11 @@ public class SensorActivity extends Activity implements SensorEventListener {
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mGravity = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+
+        soundIds[0] = sp.load(this, R.raw.wilhem_scream, 1);
+        soundIds[1] = sp.load(this, R.raw.ouch, 1);
+        isFlying = false;
+        screamId = -1;
     }
 
     @Override
@@ -40,8 +58,21 @@ public class SensorActivity extends Activity implements SensorEventListener {
         // Log.i(TAG, "gravity = " + gx + ";" + gy + ";" + gz);
         if (total < 2.0) {
             Log.i(TAG, "acceleration< = " + total + "->" + gx + ";" + gy + ";" + gz);
-        } else if (total > 15.0){
+            if (!isFlying && (screamId < 0) && (event.timestamp - lastStop > 1e9)) {
+                screamId = sp.play(soundIds[0], 100, 100, 1, -1, (float) 1.0);
+                Log.i(TAG, "playScream");
+                isFlying = true;
+            }
+        } else if (total > 11.0){
             Log.i(TAG, "acceleration> = " + total + "->" + gx + ";" + gy + ";" + gz);
+            if (isFlying) {
+                lastStop = event.timestamp;
+                sp.stop(screamId);
+                ouchId = sp.play(soundIds[1], 100, 100, 1, 0, (float) 1.0);
+                Log.i(TAG, "playOuch");
+                isFlying = false;
+                screamId = -1;
+            }
         }
     }
 
